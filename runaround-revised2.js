@@ -148,7 +148,7 @@ function initMap(coordLocation = {
 
 
     function findCoordinates(lat, lng, range){
-          var numOfPoints = 4;
+          var numOfPoints = 6;
           var degreesPerPoint = -4 /numOfPoints;
           var currentAngle = 45;
           var x2;
@@ -211,6 +211,18 @@ function initMap(coordLocation = {
             location: {
               lat:latArray[4],
               lng: lngArray[4]
+            }
+          },
+          {
+            location: {
+              lat:latArray[5],
+              lng: lngArray[5]
+            }
+          },
+          {
+            location: {
+              lat:latArray[6],
+              lng: lngArray[6]
             }
           }
         ]

@@ -10,7 +10,7 @@ body{
 	
 }
 
-#map{
+#map, #map2, #map3, #map4{
 	height: 100%;
 	margin-top: 20px;
 }
@@ -39,6 +39,14 @@ input, select{
 .info{
 	margin-top: 20px;
 	padding: 10px;
+}
+#instructions, #instructionc2, #instructions3, #instructionc4 {
+    height: 600px;
+    float: right;
+    overflow: scroll;
+    background-color: rgba(246, 246, 250, 0.4);
+    display: none;
+    margin-top: 20px;
 }
 
 #floating-panel {

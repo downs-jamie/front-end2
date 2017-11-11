@@ -1,6 +1,6 @@
 ///////////////MAP CLASS///////////////
 ///////////////////////////////////////
-function CircleMap(idForMap, zoom = 14, center = {lat: 33.989073, lng: -84.507361}, angle){
+function CircleMap(idForMap, zoom = 14, angle, idForInstuctions, center = {lat: 33.989073, lng: -84.507361}){
 	this.map = new google.maps.Map(document.getElementById(idForMap), {
 		zoom: zoom,
 		center: center
@@ -14,6 +14,7 @@ function CircleMap(idForMap, zoom = 14, center = {lat: 33.989073, lng: -84.50736
 	this.lngArray = [];
 	this.angle = angle;
 	this.startingAngle = angle;
+	this.idForInstuctions = idForInstuctions;
 }
 
 CircleMap.prototype.initialize = function(newCenter = ""){
@@ -26,6 +27,9 @@ CircleMap.prototype.initialize = function(newCenter = ""){
 		map: this.map
 	});	
 	this.directionsDisplay = new google.maps.DirectionsRenderer({map: this.map});
+
+
+
 	this.lat = this.center.lat;
 	this.lng = this.center.lng;
 
@@ -34,6 +38,7 @@ CircleMap.prototype.initialize = function(newCenter = ""){
 	this.latArray.push(init_lat_lng.lat()) /////push lat of our initial point
 	this.lngArray.push(init_lat_lng.lng()) /////push lng of our initial point
 	console.log(this.latArray);
+	console.log(this.lngArray);
 }
 
 // This looks strangely familiar... (see initilaize method)
@@ -46,12 +51,12 @@ CircleMap.prototype.reset = function(){
 		position: this.center,
 		map: this.map
 	});	
-	this.directionsDisplay = new google.maps.DirectionsRenderer({map: map});	
-	this.directionsDisplay.setPanel(document.getElementById('instructions'));	
+	this.directionsDisplay = new google.maps.DirectionsRenderer({map: this.map});	
+	this.directionsDisplay.setPanel(document.getElementById(this.idForInstuctions));	
 	this.angle = this.startingAngle;
 }
 
-CircleMap.prototype.findCoordinates = function(){
+CircleMap.prototype.findCoordinates = function(lat, lng, range){
     var numOfPoints = 6;
     var degreesPerPoint = -5 /numOfPoints;
     var x2;
@@ -67,7 +72,7 @@ CircleMap.prototype.findCoordinates = function(){
       lat_lng = new google.maps.LatLng(newLat,newLng);
       var marker = new google.maps.Marker({
         position: lat_lng,
-        map: map,
+        map: this.map,
         // visibile: false
         
       });
@@ -110,7 +115,9 @@ CircleMap.prototype.calculateAndDislayRoute = function(directionsService, stepDi
 		console.log(response)
 		if(status === "OK"){
 			document.getElementById('warning-panel').innerHTML = '<b>' + response.routes[0].warnings + '</b>';
-			this.directionsDisplay.setMap(this.name);
+			// console.log("Prombelm?")
+			// this.directionsDisplay.setMap(this.name);
+			// console.log("yes")
 			this.directionsDisplay.setDirections(response);
 			// showSteps(response,markerArray, stepDisplay, map);
 		}else{
@@ -135,9 +142,10 @@ var geocoder;
 var stepDisplay;
 var lat_lng;
 //////////////MAPS/////////////
-var map1;
-var map2;
-var map3;
+// var map1;
+// var map2;
+// var map3;
+var runningMaps = [];
 
 
 
@@ -163,7 +171,10 @@ var ajaxRequest = $.ajax({
 		jsonpCallback: 'initMap',
 		async: false, // this is by default false, so not need to mention
 		crossDomain: true // tell the browser to allow cross domain calls.
-});
+		
+
+		
+})
 
 
 $(document).ready(function(){
@@ -196,15 +207,14 @@ $(document).ready(function(){
 					lng: results[0].geometry.location.lng()
 				}
 
-				initMap(userLocationLatLng)
+				initMap2(userLocationLatLng)
 
-				map1.findCoordinates();
-				map2.findCoordinates();
-				map3.findCoordinates();
+				runningMaps.map((currMap)=>{
+					currMap.findCoordinates(userLocationLatLng.lat, userLocationLatLng.lng, range);
+					currMap.calculateAndDislayRoute(directionsService, stepDisplay);
+				})
 
-				map1.calculateAndDislayRoute(directionsService, stepDisplay);
-				map2.calculateAndDislayRoute(directionsService, stepDisplay);
-				map3.calculateAndDislayRoute(directionsService, stepDisplay);
+				
 			
 				// calculateAndDislayRoute(
 				// directionsDisplay2, directionsService, markerArray2, stepDisplay, map2, userLocation);
@@ -218,143 +228,51 @@ $(document).ready(function(){
 			
 
 		})
-			console.log('im  ont waitig for geocode.')
+			console.log('im  not waitig for geocode.')
 	});
 });  
 
-function initMap(coordLocation = "") {
-	if(map1 === undefined){
-		map1 = new CircleMap('map', 14, 90);
-		map2 = new CircleMap('map2', 14, 45);
-		map3 = new CircleMap('map3', 14, 120);
+initMap = function (coordLocation = "") {
+	if(runningMaps.length === 0){
+		runningMaps.push(new CircleMap('map', 14, 90, 'instructions'));
+		runningMaps.push(new CircleMap('map2', 14, -45, 'instructions2'));
+		runningMaps.push(new CircleMap('map3', 14, -90, 'instructions3'));
+		runningMaps.push(new CircleMap('map4', 14, 45, 'instructions4'));
 	}
-
-	console.log(coordLocation)
-	map1.initialize(coordLocation);
-	map2.initialize(coordLocation);
-	map3.initialize(coordLocation);
 
 	directionsService = new google.maps.DirectionsService;
-
 	stepDisplay = new google.maps.InfoWindow;
-	map1.directionsDisplay.setPanel(document.getElementById('instructions'));
-	// map2.directionsDisplay.setPanel(document.getElementById('instructions'));
-	// map3.directionsDisplay.setPanel(document.getElementById('instructions'));
-}
-				
-function findCoordinates(lat, lng, range){
-	var numOfPoints = 6;
-	var degreesPerPoint = -5 /numOfPoints;
-	// currentAngle = currentAngle;
-	var x2;
-	var y2;
-	var currentAngle = 45;
-	// var currentAngle2 = 90;
-	// var currentAngle3 = 0;
 
-	map = map; 
-
-	for(let i=0; i <= numOfPoints; i++){
-		x2 = Math.cos(currentAngle) * range;
-		y2 = Math.sin(currentAngle) * range;
-		newLat = lat+x2;
-		newLng = lng+y2;
-		// console.log(typeof newLat);
-		// console.log(newLng)
-		lat_lng = new google.maps.LatLng(newLat,newLng);
-		marker = new google.maps.Marker({
-			position: lat_lng,
-			map: map,
-			// visibile: false
-			
-		});
-		latArray.push(lat_lng.lat()); ////push lats of points we just looped through and placed on map
-		lngArray.push(lat_lng.lng());
-		markerArray.push(marker);
-		currentAngle += degreesPerPoint;
-	}
-
-
-
-	var currentAngle2 = 120;
-	for(let i=0; i <= numOfPoints; i++){
-		x2 = Math.cos(currentAngle2) * range;
-		y2 = Math.sin(currentAngle2) * range;
-		newLat = lat+x2;
-		newLng = lng+y2;
-		// console.log(typeof newLat);
-		// console.log(newLng)
-		lat_lng = new google.maps.LatLng(newLat,newLng);
-		marker2 = new google.maps.Marker({
-			position: lat_lng,
-			map: map2,
-			// visibile: false
-			
-		});
-		latArray2.push(lat_lng.lat()); 
-		lngArray2.push(lat_lng.lng());
-		markerArray2.push(marker2);
-		currentAngle2 += degreesPerPoint;
-	}
-
-
-
-	var currentAngle3 = 90;
-	for(let i=0; i <= numOfPoints; i++){
-		x2 = Math.cos(currentAngle3) * range;
-		y2 = Math.sin(currentAngle3) * range;
-		newLat = lat+x2;
-		newLng = lng+y2;
-		// console.log(typeof newLat);
-		// console.log(newLng)
-		lat_lng = new google.maps.LatLng(newLat,newLng);
-		marker3 = new google.maps.Marker({
-			position: lat_lng,
-			map: map3,
-			// visibile: false
-			
-		});
-		latArray3.push(lat_lng.lat()); 
-		lngArray3.push(lat_lng.lng());
-		markerArray3.push(marker3);
-		currentAngle3 += degreesPerPoint;
-
-	}
-
-	// markerArray.push(marker);
-	// markerArray2.push(marker2);
-	// markerArray3.push(marker3);
-
-	// latArray.push(lat_lng.lat()) ////push lats of points we just looped through and placed on map
-	// lngArray.push(lat_lng.lng()) ////push lngs of points we just looped through and placed on map
-
-	// latArray2.push(lat_lng.lat()) 
-	// lngArray2.push(lat_lng.lng())
-
-	// latArray3.push(lat_lng.lat()) 
-	// lngArray3.push(lat_lng.lng())
-
-	// currentAngle += degreesPerPoint;
-	// currentAngle2 += degreesPerPoint;
-	// currentAngle3 += degreesPerPoint;
-};
-
-
-function calculateAndDislayRoute(directionsDisplay, directionsService, markerArray, stepDisplay, map, userLocation){
-
+	runningMaps.map((currMap)=>{
+		currMap.initialize(coordLocation);
+		currMap.directionsDisplay.setPanel(document.getElementById(currMap.idForInstuctions));
+	})
 }
 
+initMap2 = function (coordLocation = "") {
+	if(runningMaps.length === 0){
+		runningMaps.push(new CircleMap('map', 14, 90, 'instructions'));
+		runningMaps.push(new CircleMap('map2', 14, -45, 'instructions2'));
+		runningMaps.push(new CircleMap('map3', 14, -90, 'instructions3'));
+		runningMaps.push(new CircleMap('map4', 14, 45, 'instructions4'));
+	}
 
+	directionsService = new google.maps.DirectionsService;
+	stepDisplay = new google.maps.InfoWindow;
 
+	runningMaps.map((currMap)=>{
+		currMap.initialize(coordLocation);
+		currMap.directionsDisplay.setPanel(document.getElementById(currMap.idForInstuctions));
+	})
 
-
+}
 
 function reset(){
 	// markerArray = []
 	// reset all 3 maps
-	map1.reset();
-	map2.reset();
-	map3.reset();
+	runningMaps.map((currMap)=>{
+		currMap.reset();
+	})
 	// reset globals
 	latArray = []
 	lngArray = []
